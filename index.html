@@ -153,7 +153,7 @@
                     let props = evt.extendedProps;
                     if (!evt.end) {
                         let end = new Date(evt.startStr);
-                        end.setHours(evt.start.getHours() + props.event_hours);
+                        end.setHours(evt.start.getHours() + parseInt(props.event_hours));
                         csv += `${toCorrectDateString(new Date(evt.startStr))},${toCorrectDateString(end)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
                     } else {
                         console.log(evt.start, evt.end);
@@ -166,7 +166,9 @@
 
                             const start = new Date(date);
                             date.setHours(start.getHours() + parseInt(props.event_hours));
-                            csv += `${toCorrectDateString(start)},${toCorrectDateString(date)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                            if (start.toDateString() === date.toDateString()) {
+                                csv += `${toCorrectDateString(start)},${toCorrectDateString(date)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                            }
                         });
                     }
                 });
