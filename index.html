@@ -158,7 +158,7 @@
                     } else {
                         console.log(evt.start, evt.end);
                         const numberOfDays = [];
-                        for (let d = new Date(evt.start); d <= evt.end; d.setDate(d.getDate() + 1)) {
+                        for (let d = new Date(evt.start); d < evt.end; d.setDate(d.getDate() + 1)) {
                             numberOfDays.push(new Date(d));
                         }
                         numberOfDays.forEach(date => {
