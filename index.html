@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset='utf-8'/>
+    <title>TeamleaderUI</title>
+    <link href="lib/main.css" rel="stylesheet"/>
+    <link href="styles.css" rel="stylesheet"/>
+    <script src="lib/main.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const button = document.getElementById('btn-new-event-input');
+
+            let projects = [];
+
+            button.addEventListener('click', _ => {
+                var event_id = document.getElementById('new-event-id-input').value;
+                var event_name = document.getElementById('new-event-description-input').value;
+                var event_hours = document.getElementById('new-event-hours-input').value;
+
+                // var event = `<div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'><div class='fc-event-main'>${event_name}</div></div>`
+
+                if (projects.filter(p => p.extendedProps.event_hours === event_hours && p.extendedProps.event_id === event_id).length < 1) {
+                    var event = document.createElement('div');
+                    event.classList = ['fc-event-main'];
+                    event.innerHTML = `<span>${event_id}</span><span>${event_hours}h</span>`;
+
+                    var event_container = document.createElement('div');
+                    event_container.classList = ['fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'];
+                    event_container.appendChild(event);
+
+                    const data = {
+                        title: event_container.innerHTML.trim(),
+                        description: event_name,
+                        startTime: {hour: 9},
+                        allDay: false,
+                        defaultAllDayEventDuration: {hours: parseInt(event_hours)},
+                        extendedProps: {
+                            event_id,
+                            event_hours,
+                            event_name
+                        }
+                    };
+                    projects.push(data);
+                    new FullCalendar.Draggable(event_container, {
+                        eventData: data
+                    });
+                }
+                localStorage.setItem('projects', JSON.stringify(projects));
+
+                document.getElementById('external-events-list').appendChild(event_container);
+            });
+
+            const projectsFromStorage = JSON.parse(localStorage.getItem('projects'));
+            if (projectsFromStorage) {
+                var event_id = document.getElementById('new-event-id-input');
+                var event_name = document.getElementById('new-event-description-input');
+                var event_hours = document.getElementById('new-event-hours-input');
+                projectsFromStorage.forEach(event => {
+                    event_id.value = event.extendedProps.event_id;
+                    event_name.value = event.extendedProps.event_name;
+                    event_hours.value = event.extendedProps.event_hours;
+                    button.click();
+                });
+                event_id.value = '';
+                event_name.value = '';
+                event_hours.value = '';
+            }
+
+
+            /* initialize the external events
+            -----------------------------------------------------------------*/
+
+            // var containerEl = document.getElementById('external-events-list');
+            // new FullCalendar.Draggable(containerEl, {
+            //     itemSelector: '.fc-event',
+            //     eventData: function(eventEl) {
+            //         return {
+            //             title: eventEl.innerText.trim()
+            //         }
+            //     }
+            // });
+
+            // the individual way to do it
+            // var containerEl = document.getElementById('external-events-list');
+            // var eventEls = Array.prototype.slice.call(
+            //     containerEl.querySelectorAll('.fc-event')
+            // );
+            // console.log(eventEls);
+            // eventEls.forEach(function (eventEl) {
+            //     console.log(eventEl);
+            //     new FullCalendar.Draggable(eventEl, {
+            //         eventData: {
+            //             title: eventEl.innerText.trim(),
+            //         }
+            //     });
+            // });
+
+            /* initialize the calendar
+            -----------------------------------------------------------------*/
+
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: 'dayGridMonth,listMonth'
+                },
+                editable: true,
+                droppable: true, // this allows things to be dropped onto the calendar
+                drop: function (arg) {
+                    // is the "remove after drop" checkbox checked?
+                    // if (document.getElementById('drop-remove').checked) {
+                    //     // if so, remove the element from the "Draggable Events" list
+                    //     arg.draggedEl.parentNode.removeChild(arg.draggedEl);
+                    // }
+                    arg.allDay = false;
+                },
+                // eventReceive: (args) => {
+                //     console.log(args.event);
+                //
+                //     var start = new Date(args.event.start);
+                //     start.setHours(9, 0, 0);
+                //     args.event.setStart(start);
+                //     args.event.moveEnd({hours: args.event.extendedProps.event_hours});
+                //
+                //     var element = document.createElement('div');
+                //     element.style = 'width: 100%;';
+                //     element.innerHTML = args.event.title;
+                //     return {domNodes: [element]};
+                // },
+                eventContent: (args) => {
+                    console.log('eventContent', args);
+                    var element = document.createElement('div');
+                    element.style = 'width: 100%;';
+                    element.innerHTML = args.event.title;
+                    return {domNodes: [element]};
+                },
+                eventResize: (args) => {
+                    console.log('eventResize', args);
+                },
+                eventResizeStop: (args) => {
+                    console.log('eventResizeStop', args);
+                }
+            });
+            calendar.render();
+
+
+            const download_button = document.getElementById('btn-events-download');
+            download_button.addEventListener('click', _ => {
+                let csv = '';
+                calendar.getEvents().forEach(evt => {
+                    let props = evt.extendedProps;
+                    if (!evt.end) {
+                        let end = new Date(evt.startStr);
+                        end.setHours(evt.start.getHours() + props.event_hours);
+                        csv += `${toCorrectDateString(new Date(evt.startStr))},${toCorrectDateString(end)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                    } else {
+                        console.log(evt.start, evt.end);
+                        const numberOfDays = [];
+                        for (let d = new Date(evt.start); d <= evt.end; d.setDate(d.getDate() + 1)) {
+                            numberOfDays.push(new Date(d));
+                        }
+                        numberOfDays.forEach(date => {
+                            date.setHours(9); // By dragging, date became full day and loses start hour
+
+                            const start = new Date(date);
+                            date.setHours(start.getHours() + parseInt(props.event_hours));
+                            csv += `${toCorrectDateString(start)},${toCorrectDateString(date)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                        });
+                    }
+                });
+
+                const a = document.createElement('a');
+                a.download = 'export.csv';
+                a.setAttribute('href', window.URL.createObjectURL(new Blob([csv], {type: 'application/octet-stream'})));
+                a.click();
+            });
+        });
+
+        function appendLeadingZeroes(n) {
+            if (n <= 9) {
+                return "0" + n;
+            }
+            return n
+        }
+
+        function toCorrectDateString(date) {
+            return `${appendLeadingZeroes(date.getFullYear())}-${appendLeadingZeroes(date.getMonth() + 1)}-${appendLeadingZeroes(date.getDate())} ${appendLeadingZeroes(date.getHours())}:${appendLeadingZeroes(date.getMinutes())}`;
+        }
+    </script>
+</head>
+<body>
+<div id='wrap'>
+
+    <div id='external-events'>
+        <h4>Draggable Events</h4>
+
+        <div id='external-events-list'>
+        </div>
+    </div>
+
+    <div id="new-event">
+        <h4>New event</h4>
+        <div class="new-event-input">
+            <div>
+                <label for="new-event-id-input">Project ID</label>
+                <input id="new-event-id-input" type="tel"/>
+            </div>
+            <div>
+                <label for="new-event-description-input">Description</label>
+                <input id="new-event-description-input" type="text"/>
+            </div>
+            <div>
+                <label for="new-event-hours-input">Amount hours</label>
+                <input id="new-event-hours-input" type="tel"/>
+            </div>
+        </div>
+        <button id="btn-new-event-input" type="button">Add</button>
+        <button id="btn-events-download" type="button">Download</button>
+    </div>
+
+    <div id='calendar-wrap'>
+        <div id='calendar'></div>
+    </div>
+
+</div>
+</body>
+</html>
