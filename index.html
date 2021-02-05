@@ -14,21 +14,26 @@
             let projects = [];
 
             button.addEventListener('click', _ => {
-                var event_id = document.getElementById('new-event-id-input').value;
-                var event_name = document.getElementById('new-event-description-input').value;
-                var event_hours = document.getElementById('new-event-hours-input').value;
+                const event_id = document.getElementById('new-event-id-input').value;
+                const event_name = document.getElementById('new-event-description-input').value;
+                const event_hours = document.getElementById('new-event-hours-input').value;
+                const event_phase = document.getElementById('new-event-phase-input').value;
+                const event_type = document.getElementById('new-event-type-input').value;
+                const event_billable = document.getElementById('new-event-billable-input').value;
 
                 // var event = `<div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'><div class='fc-event-main'>${event_name}</div></div>`
 
+                const event = document.createElement('div');
+                event.classList = ['fc-event-main'];
+                event.style =  ['background-color: ' + getBackground(event_hours) +';color:' + getTextColor(event_hours)];
+                event.innerHTML = `<span>${event_id}</span><span>${event_hours}h</span>`;
+
+                const event_container = document.createElement('div');
+                event_container.classList = ['fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'];
+                event_container.style = ['background-color: ' + getBackground(event_hours) +';color:' + getTextColor(event_hours)];
+                event_container.appendChild(event);
+
                 if (projects.filter(p => p.extendedProps.event_hours === event_hours && p.extendedProps.event_id === event_id).length < 1) {
-                    var event = document.createElement('div');
-                    event.classList = ['fc-event-main'];
-                    event.innerHTML = `<span>${event_id}</span><span>${event_hours}h</span>`;
-
-                    var event_container = document.createElement('div');
-                    event_container.classList = ['fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'];
-                    event_container.appendChild(event);
-
                     const data = {
                         title: event_container.innerHTML.trim(),
                         description: event_name,
@@ -38,7 +43,10 @@
                         extendedProps: {
                             event_id,
                             event_hours,
-                            event_name
+                            event_name,
+                            event_phase,
+                            event_type,
+                            event_billable
                         }
                     };
                     projects.push(data);
@@ -53,48 +61,29 @@
 
             const projectsFromStorage = JSON.parse(localStorage.getItem('projects'));
             if (projectsFromStorage) {
-                var event_id = document.getElementById('new-event-id-input');
-                var event_name = document.getElementById('new-event-description-input');
-                var event_hours = document.getElementById('new-event-hours-input');
+                const event_id = document.getElementById('new-event-id-input');
+                const event_name = document.getElementById('new-event-description-input');
+                const event_hours = document.getElementById('new-event-hours-input');
+                const event_phase = document.getElementById('new-event-phase-input');
+                const event_type = document.getElementById('new-event-type-input');
+                const event_billable = document.getElementById('new-event-billable-input');
+
                 projectsFromStorage.forEach(event => {
                     event_id.value = event.extendedProps.event_id;
                     event_name.value = event.extendedProps.event_name;
                     event_hours.value = event.extendedProps.event_hours;
+                    event_phase.value = event.extendedProps.event_phase;
+                    event_type.value = event.extendedProps.event_type;
+                    event_billable.value = event.extendedProps.event_billable;
                     button.click();
                 });
                 event_id.value = '';
                 event_name.value = '';
                 event_hours.value = '';
+                event_phase.value = '';
+                event_type.value = '';
+                event_billable.value = '';
             }
-
-
-            /* initialize the external events
-            -----------------------------------------------------------------*/
-
-            // var containerEl = document.getElementById('external-events-list');
-            // new FullCalendar.Draggable(containerEl, {
-            //     itemSelector: '.fc-event',
-            //     eventData: function(eventEl) {
-            //         return {
-            //             title: eventEl.innerText.trim()
-            //         }
-            //     }
-            // });
-
-            // the individual way to do it
-            // var containerEl = document.getElementById('external-events-list');
-            // var eventEls = Array.prototype.slice.call(
-            //     containerEl.querySelectorAll('.fc-event')
-            // );
-            // console.log(eventEls);
-            // eventEls.forEach(function (eventEl) {
-            //     console.log(eventEl);
-            //     new FullCalendar.Draggable(eventEl, {
-            //         eventData: {
-            //             title: eventEl.innerText.trim(),
-            //         }
-            //     });
-            // });
 
             /* initialize the calendar
             -----------------------------------------------------------------*/
@@ -108,31 +97,10 @@
                 },
                 editable: true,
                 droppable: true, // this allows things to be dropped onto the calendar
-                drop: function (arg) {
-                    // is the "remove after drop" checkbox checked?
-                    // if (document.getElementById('drop-remove').checked) {
-                    //     // if so, remove the element from the "Draggable Events" list
-                    //     arg.draggedEl.parentNode.removeChild(arg.draggedEl);
-                    // }
-                    arg.allDay = false;
-                },
-                // eventReceive: (args) => {
-                //     console.log(args.event);
-                //
-                //     var start = new Date(args.event.start);
-                //     start.setHours(9, 0, 0);
-                //     args.event.setStart(start);
-                //     args.event.moveEnd({hours: args.event.extendedProps.event_hours});
-                //
-                //     var element = document.createElement('div');
-                //     element.style = 'width: 100%;';
-                //     element.innerHTML = args.event.title;
-                //     return {domNodes: [element]};
-                // },
                 eventContent: (args) => {
                     console.log('eventContent', args);
-                    var element = document.createElement('div');
-                    element.style = 'width: 100%;';
+                    const element = document.createElement('div');
+                    element.style = ['width: 100%;background-color: ' + getBackground(args.event.extendedProps.event_hours) +';color:' + getTextColor(args.event.extendedProps.event_hours)];
                     element.innerHTML = args.event.title;
                     return {domNodes: [element]};
                 },
@@ -154,7 +122,7 @@
                     if (!evt.end) {
                         let end = new Date(evt.startStr);
                         end.setHours(evt.start.getHours() + parseInt(props.event_hours));
-                        csv += `${toCorrectDateString(new Date(evt.startStr))},${toCorrectDateString(end)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                        csv += `${toCorrectDateString(new Date(evt.startStr))},${toCorrectDateString(end)},${props.event_name},${props.event_id},${props.event_type},${props.event_billable === 'on' ? 1 : 0},${props.event_phase}\n`;
                     } else {
                         console.log(evt.start, evt.end);
                         const numberOfDays = [];
@@ -167,7 +135,7 @@
                             const start = new Date(date);
                             date.setHours(start.getHours() + parseInt(props.event_hours));
                             if (start.toDateString() === date.toDateString()) {
-                                csv += `${toCorrectDateString(start)},${toCorrectDateString(date)},${props.event_name},${props.event_id},IT Consultancy,1,2020\n`;
+                                csv += `${toCorrectDateString(new Date(evt.startStr))},${toCorrectDateString(date)},${props.event_name},${props.event_id},${props.event_type},${props.event_billable === 'on' ? 1 : 0},${props.event_phase}\n`;
                             }
                         });
                     }
@@ -189,6 +157,113 @@
 
         function toCorrectDateString(date) {
             return `${appendLeadingZeroes(date.getFullYear())}-${appendLeadingZeroes(date.getMonth() + 1)}-${appendLeadingZeroes(date.getDate())} ${appendLeadingZeroes(date.getHours())}:${appendLeadingZeroes(date.getMinutes())}`;
+        }
+
+        function getBackground(hours) {
+            if (hours >= 16) {
+                return '#1ccc45';
+            }
+            if (hours >= 15) {
+                return '#d74a49';
+            }
+            if (hours >= 14) {
+                return '#0df9de';
+            }
+            if (hours >= 13) {
+                return '#c2f0d3';
+            }
+            if (hours >= 12) {
+                return '#a19909';
+            }
+            if (hours >= 11) {
+                return '#56348c';
+            }
+            if (hours >= 10) {
+                return '#44400d';
+            }
+            if (hours >= 9) {
+                return '#649633';
+            }
+            if (hours >= 8) {
+                return '#426bbd';
+            }
+            if (hours >= 7) {
+                return '#13134a';
+            }
+            if (hours >= 6) {
+                return '#a9c08b';
+            }
+            if (hours >= 5) {
+                return '#124763';
+            }
+            if (hours >= 4) {
+                return '#d9526a';
+            }
+            if (hours >= 3) {
+                return '#c20513';
+            }
+            if (hours >= 2) {
+                return '#311e69';
+            }
+            if (hours >= 1) {
+                return '#ceed14';
+            }
+
+            return '#729449';
+        }
+
+        function getTextColor(hours) {
+
+            if (hours >= 16) {
+                return 'black !important';
+            }
+            if (hours >= 15) {
+                return 'white !important';
+            }
+            if (hours >= 14) {
+                return 'black !important';
+            }
+            if (hours >= 13) {
+                return 'black !important';
+            }
+            if (hours >= 12) {
+                return 'white !important';
+            }
+            if (hours >= 11) {
+                return 'white !important';
+            }
+            if (hours >= 10) {
+                return 'white !important';
+            }
+            if (hours >= 9) {
+                return 'white !important';
+            }
+            if (hours >= 8) {
+                return 'white !important';
+            }
+            if (hours >= 7) {
+                return 'white !important';
+            }
+            if (hours >= 6) {
+                return 'black !important';
+            }
+            if (hours >= 5) {
+                return 'white !important';
+            }
+            if (hours >= 4) {
+                return 'white !important';
+            }
+            if (hours >= 3) {
+                return 'white !important';
+            }
+            if (hours >= 2) {
+                return 'white !important';
+            }
+            if (hours >= 1) {
+                return 'black !important';
+            }
+
+            return 'white !important';
         }
     </script>
 </head>
@@ -216,6 +291,18 @@
             <div>
                 <label for="new-event-hours-input">Amount hours</label>
                 <input id="new-event-hours-input" type="tel"/>
+            </div>
+            <div>
+                <label for="new-event-phase-input">Phase</label>
+                <input id="new-event-phase-input" type="text"/>
+            </div>
+            <div>
+                <label for="new-event-type-input">Work type</label>
+                <input id="new-event-type-input" type="text"/>
+            </div>
+            <div>
+                <label for="new-event-billable-input">Billable</label>
+                <input id="new-event-billable-input" type="checkbox" checked/>
             </div>
         </div>
         <button id="btn-new-event-input" type="button">Add</button>

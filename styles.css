@@ -73,3 +73,7 @@ body {
     justify-content: space-between;
     padding: 0 5px;
 }
+
+.fc-h-event {
+    background-color: transparent;
+}
